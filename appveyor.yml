@@ -2,37 +2,15 @@ version: 1.0.{build}
 
 image: Ubuntu2204
 
-environment:
-  PYTHON_VERSION: "3.13"
-
 branches:
   only:
     - main
 
 skip_tags: true
 
-init:
-  # Check if we should run (for daily schedule simulation)
-  # Using bash syntax for Linux image
-  - |
-    if [ "$APPVEYOR_SCHEDULED_BUILD" = "True" ]; then
-      echo "This is a scheduled build"
-    elif [ "$APPVEYOR_REPO_TAG" = "true" ]; then
-      echo "This is a tag build"
-    else
-      # For manual triggers
-      echo "This is a manual build"
-    fi
-
 build_script:
-  - sudo apt-get update
-  - sudo apt-get install -y curl
-  
-  # Install uv
   - curl -LsSf https://astral.sh/uv/install.sh | sh
-  
-  # Build GTFS
-  - ~/.cargo/bin/uv run python -m packer.KpPacker
+  - uv run python -m packer.KpPacker
 
 after_build:
   - export RELEASE_DATE=$(date +'%Y-%m-%d')
@@ -46,7 +24,7 @@ deploy:
   - provider: GitHub
     description: "GTFS data generated on $(date +'%Y-%m-%d')"
     auth_token:
-      secure: YOUR_ENCRYPTED_TOKEN_HERE
+      secure: nXI6lI5iGLY5FI2p+OdZzq2f+XoX2yRb3poMaq51Gll/3QmoaskvIvAg2V/Iqvt2/REc7v4z6YFGX270+dK03XEVrOKCOmsZK6cQyPDtqhpLpVWPV+t0vkSuEkREZYjP
     tag: "$(date +'%Y-%m-%d')"
     release: "$(date +'%Y-%m-%d')"
     artifact: "GTFS_$(date +'%Y-%m-%d')"
