@@ -1,0 +1,54 @@
+version: 1.0.{build}
+
+image: Ubuntu2204
+
+environment:
+  PYTHON_VERSION: "3.13"
+
+branches:
+  only:
+    - main
+
+skip_tags: true
+
+init:
+  # Check if we should run (for daily schedule simulation)
+  - |
+    if ($env:APPVEYOR_SCHEDULED_BUILD -eq "True") {
+      echo "This is a scheduled build"
+    } elseif ($env:APPVEYOR_REPO_TAG -eq "true") {
+      echo "This is a tag build"
+    } else {
+      # For manual triggers
+      echo "This is a manual build"
+    }
+
+build_script:
+  - sudo apt-get update
+  - sudo apt-get install -y curl
+  
+  # Install uv
+  - curl -LsSf https://astral.sh/uv/install.sh | sh
+  
+  # Build GTFS
+  - uv run python -m packer.KpPacker
+
+after_build:
+  - export RELEASE_DATE=$(date +'%Y-%m-%d')
+  - echo "Release date: $RELEASE_DATE"
+
+artifacts:
+  - path: gtfs/*
+    name: GTFS_$(date +'%Y-%m-%d')
+
+deploy:
+  - provider: GitHub
+    auth_token:
+      secure: YOUR_ENCRYPTED_TOKEN_HERE
+    tag: $(date +'%Y-%m-%d')
+    release: $(date +'%Y-%m-%d')
+    artifact: GTFS_$(date +'%Y-%m-%d')
+    draft: false
+    prerelease: false
+    on:
+      branch: main
