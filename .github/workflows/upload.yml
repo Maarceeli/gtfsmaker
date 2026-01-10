@@ -1,0 +1,39 @@
+name: Publish GTFS
+
+on:
+  schedule:
+  - cron: "30 12 * * *"
+  workflow_dispatch:  # Allows manual triggering
+  
+permissions:
+  contents: write  # Changed from 'read' to 'write' for creating releases
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python 3.13
+      uses: actions/setup-python@v3
+      with:
+        python-version: "3.13"
+    - name: Install dependencies
+      run: curl -LsSf https://astral.sh/uv/install.sh | sh
+
+    - name: Build GTFS
+      run: uv run python -m packer.KpPacker
+
+    - name: Get current date
+      id: date
+      run: echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: ${{ steps.date.outputs.date }}
+        name: ${{ steps.date.outputs.date }}
+        files: gtfs/*
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
