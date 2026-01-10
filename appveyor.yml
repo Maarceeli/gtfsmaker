@@ -13,15 +13,16 @@ skip_tags: true
 
 init:
   # Check if we should run (for daily schedule simulation)
+  # Using bash syntax for Linux image
   - |
-    if ($env:APPVEYOR_SCHEDULED_BUILD -eq "True") {
+    if [ "$APPVEYOR_SCHEDULED_BUILD" = "True" ]; then
       echo "This is a scheduled build"
-    } elseif ($env:APPVEYOR_REPO_TAG -eq "true") {
+    elif [ "$APPVEYOR_REPO_TAG" = "true" ]; then
       echo "This is a tag build"
-    } else {
+    else
       # For manual triggers
       echo "This is a manual build"
-    }
+    fi
 
 build_script:
   - sudo apt-get update
@@ -31,7 +32,7 @@ build_script:
   - curl -LsSf https://astral.sh/uv/install.sh | sh
   
   # Build GTFS
-  - uv run python -m packer.KpPacker
+  - ~/.cargo/bin/uv run python -m packer.KpPacker
 
 after_build:
   - export RELEASE_DATE=$(date +'%Y-%m-%d')
@@ -39,15 +40,16 @@ after_build:
 
 artifacts:
   - path: gtfs/*
-    name: GTFS_$(date +'%Y-%m-%d')
+    name: "GTFS_$(date +'%Y-%m-%d')"
 
 deploy:
   - provider: GitHub
+    description: "GTFS data generated on $(date +'%Y-%m-%d')"
     auth_token:
       secure: YOUR_ENCRYPTED_TOKEN_HERE
-    tag: $(date +'%Y-%m-%d')
-    release: $(date +'%Y-%m-%d')
-    artifact: GTFS_$(date +'%Y-%m-%d')
+    tag: "$(date +'%Y-%m-%d')"
+    release: "$(date +'%Y-%m-%d')"
+    artifact: "GTFS_$(date +'%Y-%m-%d')"
     draft: false
     prerelease: false
     on:
